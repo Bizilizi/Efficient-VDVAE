@@ -26,9 +26,9 @@ except (ImportError, ValueError):
     from utils.utils import assert_CUDA_and_hparams_gpus_are_equal, \
         create_checkpoint_manager_and_load_if_exists, create_tb_writer
     from data.generic_data_loader import train_val_data_generic, create_filenames_list
-    from data.cifar10_data_loader import train_val_data_cifar10
-    from data.imagenet_data_loader import train_val_data_imagenet
-    from data.mnist_data_loader import train_val_data_mnist
+    # from data.cifar10_data_loader import train_val_data_cifar10
+    # from data.imagenet_data_loader import train_val_data_imagenet
+    # from data.mnist_data_loader import train_val_data_mnist
     from model.def_model import UniversalAutoEncoder
 
 local_rank = int(os.environ["LOCAL_RANK"])
