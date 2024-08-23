@@ -1,4 +1,5 @@
 FROM nvcr.io/nvidia/pytorch:22.02-py3
+ll
 
 RUN pip install --upgrade pip
 

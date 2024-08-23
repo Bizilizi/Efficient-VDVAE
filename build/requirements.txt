@@ -15,3 +15,7 @@ tqdm==4.40.1
 Unidecode==1.1.1
 tensorflow_probability==0.14.1
 torch_optimizer==0.3.0
+tensorboard
+prettytable
+torchvision
+tensorflow

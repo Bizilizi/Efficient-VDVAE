@@ -18,9 +18,9 @@ try:
     from .utils.utils import assert_CUDA_and_hparams_gpus_are_equal, \
         create_checkpoint_manager_and_load_if_exists, create_tb_writer
     from .data.generic_data_loader import train_val_data_generic, create_filenames_list
-    from .data.cifar10_data_loader import train_val_data_cifar10
-    from .data.mnist_data_loader import train_val_data_mnist
-    from .data.imagenet_data_loader import train_val_data_imagenet
+    # from .data.cifar10_data_loader import train_val_data_cifar10
+    # from .data.mnist_data_loader import train_val_data_mnist
+    # from .data.imagenet_data_loader import train_val_data_imagenet
 except (ImportError, ValueError):
     from model.model import train, get_optimizer
     from utils.utils import assert_CUDA_and_hparams_gpus_are_equal, \
@@ -127,12 +127,12 @@ def main():
         val_files, val_filenames = create_filenames_list(hparams.data.val_data_path)
         train_loader, val_loader = train_val_data_generic(train_files, train_filenames, val_files, val_filenames,
                                                           hparams.run.num_gpus, local_rank)
-    elif hparams.data.dataset_source == 'cifar-10':
-        train_loader, val_loader = train_val_data_cifar10(hparams.run.num_gpus, local_rank)
-    elif hparams.data.dataset_source == 'binarized_mnist':
-        train_loader, val_loader = train_val_data_mnist(hparams.run.num_gpus, local_rank)
-    elif hparams.data.dataset_source == 'imagenet':
-        train_loader, val_loader = train_val_data_imagenet(hparams.run.num_gpus, local_rank)
+    # elif hparams.data.dataset_source == 'cifar-10':
+    #     train_loader, val_loader = train_val_data_cifar10(hparams.run.num_gpus, local_rank)
+    # elif hparams.data.dataset_source == 'binarized_mnist':
+    #     train_loader, val_loader = train_val_data_mnist(hparams.run.num_gpus, local_rank)
+    # elif hparams.data.dataset_source == 'imagenet':
+    #     train_loader, val_loader = train_val_data_imagenet(hparams.run.num_gpus, local_rank)
     else:
         raise ValueError(f'Dataset {hparams.data.dataset_source} is not included.')
 
