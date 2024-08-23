@@ -10,7 +10,7 @@ hparams = HParams.get_hparams_by_name("efficient_vdvae")
 
 
 def get_logdir():
-    return f'logs-{hparams.run.name}'
+    return f'{hparams.run.output_dir}/logs-{hparams.run.name}'
 
 
 def transpose_dicts(dct):
@@ -86,10 +86,6 @@ def create_checkpoint_manager_and_load_if_exists(model_directory='.', rank=0):
     checkpoint = load_checkpoint_if_exists(checkpoint_path, rank)
 
     return checkpoint, checkpoint_path
-
-
-def get_logdir():
-    return f'logs-{hparams.run.name}'
 
 
 def create_tb_writer(mode):

@@ -1,5 +1,5 @@
 import copy
-
+from pathlib import Path
 from hparams import HParams
 import os
 import numpy as np
@@ -77,7 +77,12 @@ def main():
 
     ema_model = copy.deepcopy(model)
 
-    checkpoint, checkpoint_path = create_checkpoint_manager_and_load_if_exists(rank=local_rank)
+    Path(hparams.run.output_dir).mkdir(parents=True, exist_ok=True)
+
+    checkpoint, checkpoint_path = create_checkpoint_manager_and_load_if_exists(
+        model_directory=hparams.run.output_dir,
+        rank=local_rank,
+    )
 
     optimizer, schedule = get_optimizer(model=model,
                                         type=hparams.optimizer.type,
@@ -109,7 +114,6 @@ def main():
     else:
         ema_model.load_state_dict(model.state_dict())
         print('Copy EMA from model')
-
 
     model = model.to(device)
     if ema_model is not None:
