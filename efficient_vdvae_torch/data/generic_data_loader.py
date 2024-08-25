@@ -118,6 +118,7 @@ class generic_dataset(torch.utils.data.Dataset):
 def train_val_data_generic(train_images, train_filenames, val_images, val_filenames, world_size, rank):
     train_data = generic_dataset(train_images, train_filenames, mode='train')
     train_sampler = DistributedSampler(train_data, num_replicas=world_size, rank=rank, shuffle=True, drop_last=True)
+    print(f"hparams.train.batch_size = {hparams.train.batch_size}")
     train_loader = torch.utils.data.DataLoader(sampler=train_sampler,
                                                dataset=train_data,
                                                batch_size=hparams.train.batch_size // hparams.run.num_gpus,
