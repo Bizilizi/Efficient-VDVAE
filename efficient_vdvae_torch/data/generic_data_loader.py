@@ -107,12 +107,10 @@ class generic_dataset(torch.utils.data.Dataset):
             raise ValueError(f'Unknown Mode {self.mode}')
 
     def __len__(self):
-        if self.mode in ['train', 'encode', 'test']:
-            return len(self.files)
-        elif self.mode == 'val':
-            return hparams.val.n_samples_for_validation
-        elif self.mode == 'div_stats':
+        if self.mode == 'div_stats':
             return round(len(self.files) * hparams.synthesis.div_stats_subset_ratio)
+        else:
+            return len(self.files)
 
 
 def train_val_data_generic(train_images, train_filenames, val_images, val_filenames, world_size, rank):
