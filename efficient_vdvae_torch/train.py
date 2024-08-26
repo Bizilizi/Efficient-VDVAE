@@ -83,6 +83,7 @@ def main():
         model_directory=hparams.run.output_dir,
         rank=local_rank,
     )
+    Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
 
     optimizer, schedule = get_optimizer(model=model,
                                         type=hparams.optimizer.type,
