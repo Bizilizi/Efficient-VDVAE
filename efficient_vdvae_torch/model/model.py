@@ -471,6 +471,7 @@ def train(model, ema_model, optimizer, schedule, train_dataset, val_dataset, che
 
                     # Save checkpoint (only if better than best)
                     print(f'Saving checkpoint for global_step {global_step}..')
+                    print(f'Checkpoint path is {checkpoint_path}.')
 
                     torch.save({
                         'global_step': global_step,
