@@ -5,6 +5,8 @@ from hparams import HParams
 from collections import defaultdict
 from torch.utils.tensorboard import SummaryWriter
 from prettytable import PrettyTable
+from pathlib import Path
+import glob
 
 hparams = HParams.get_hparams_by_name("efficient_vdvae")
 
@@ -71,18 +73,28 @@ def assert_CUDA_and_hparams_gpus_are_equal():
 
 def load_checkpoint_if_exists(checkpoint_path, rank):
     try:
-        checkpoint = torch.load(checkpoint_path, map_location='cuda:{}'.format(rank))
-    except FileNotFoundError:
-        checkpoint = {'global_step': -1,
-                      'model_state_dict': None,
-                      'ema_model_state_dict': None,
-                      'optimizer_state_dict': None,
-                      'scheduler_state_dict': None}
+        all_checkpoints = glob.glob(f"{checkpoint_path}/*")
+        sorted_checkpoints = sorted(
+            all_checkpoints,
+            key=lambda chkp: int(chkp.split("/")[-1].split(".")[-2]),
+            reverse=True
+        )
+        last_checkpoint = list(sorted_checkpoints)[-1]
+
+        checkpoint = torch.load(last_checkpoint, map_location='cuda:{}'.format(rank))
+    except Exception:
+        checkpoint = {
+            'step_id': 0,
+            'global_step': -1,
+            'model_state_dict': None,
+            'ema_model_state_dict': None,
+            'optimizer_state_dict': None,
+            'scheduler_state_dict': None}
     return checkpoint
 
 
 def create_checkpoint_manager_and_load_if_exists(model_directory='.', rank=0):
-    checkpoint_path = os.path.join(model_directory, f'checkpoints-{hparams.run.name}')
+    checkpoint_path = Path(model_directory) / f'checkpoints-{hparams.run.name}'
     checkpoint = load_checkpoint_if_exists(checkpoint_path, rank)
 
     return checkpoint, checkpoint_path

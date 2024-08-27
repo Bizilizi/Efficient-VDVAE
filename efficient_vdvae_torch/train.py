@@ -1,3 +1,4 @@
+import argparse
 import copy
 from pathlib import Path
 from hparams import HParams
@@ -65,7 +66,7 @@ def cleanup():
     dist.destroy_process_group()
 
 
-def main():
+def main(output_dir, train_data_path, val_data_path, step_id):
     model = UniversalAutoEncoder()
     model.to(device)
     with torch.no_grad():
@@ -77,7 +78,7 @@ def main():
 
     ema_model = copy.deepcopy(model)
 
-    Path(hparams.run.output_dir).mkdir(parents=True, exist_ok=True)
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     checkpoint, checkpoint_path = create_checkpoint_manager_and_load_if_exists(
         model_directory=hparams.run.output_dir,
@@ -124,16 +125,10 @@ def main():
     model = DistributedDataParallel(model)
 
     if hparams.data.dataset_source in ['ffhq', 'celebAHQ', 'celebA', 'custom']:
-        train_files, train_filenames = create_filenames_list(hparams.data.train_data_path)
-        val_files, val_filenames = create_filenames_list(hparams.data.val_data_path)
+        train_files, train_filenames = create_filenames_list(train_data_path)
+        val_files, val_filenames = create_filenames_list(val_data_path)
         train_loader, val_loader = train_val_data_generic(train_files, train_filenames, val_files, val_filenames,
                                                           hparams.run.num_gpus, local_rank)
-    # elif hparams.data.dataset_source == 'cifar-10':
-    #     train_loader, val_loader = train_val_data_cifar10(hparams.run.num_gpus, local_rank)
-    # elif hparams.data.dataset_source == 'binarized_mnist':
-    #     train_loader, val_loader = train_val_data_mnist(hparams.run.num_gpus, local_rank)
-    # elif hparams.data.dataset_source == 'imagenet':
-    #     train_loader, val_loader = train_val_data_imagenet(hparams.run.num_gpus, local_rank)
     else:
         raise ValueError(f'Dataset {hparams.data.dataset_source} is not included.')
 
@@ -143,9 +138,20 @@ def main():
 
     # Train model
     train(model, ema_model, optimizer, schedule, train_loader, val_loader, checkpoint['global_step'], writer_train,
-          writer_val, checkpoint_path, device, local_rank)
+          writer_val, checkpoint_path, device, local_rank, step_id)
     cleanup()
 
-
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="vdvae trainer")
+
+    parser.add_argument("--restore_from", type=str, help="experiment path", default=None)
+    parser.add_argument("--restore_synthetic_dataset", type=str, help="synthetic dataset path", default=None)
+    args = parser.parse_args()
+
+
+    main(
+        output_dir="/scratch/shared/beegfs/dzverev/gen_collaps/vdvae/step_0/",
+        train_data_path="/scratch/shared/beegfs/dzverev/datasets/flowers/train_data/",
+        val_data_path="/scratch/shared/beegfs/dzverev/datasets/flowers/val_data/",
+        step_id=0
+    )

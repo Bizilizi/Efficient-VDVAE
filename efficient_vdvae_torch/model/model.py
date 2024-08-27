@@ -243,12 +243,12 @@ def plot_image(outputs, targets, step, writer):
 def _compiled_train_step(model, inputs, step_n):
     predictions, posterior_dist_list, prior_kl_dist_list = model(inputs)
     avg_feature_matching_loss, avg_global_varprior_losses, total_generator_loss, means, \
-    log_scales, kl_div = compute_loss(inputs,
-                                      predictions,
-                                      posterior_dist_list=posterior_dist_list,
-                                      prior_kl_dist_list=prior_kl_dist_list,
-                                      step_n=step_n,
-                                      global_batch_size=hparams.train.batch_size // hparams.run.num_gpus)
+        log_scales, kl_div = compute_loss(inputs,
+                                          predictions,
+                                          posterior_dist_list=posterior_dist_list,
+                                          prior_kl_dist_list=prior_kl_dist_list,
+                                          step_n=step_n,
+                                          global_batch_size=hparams.train.batch_size // hparams.run.num_gpus)
 
     total_generator_loss.backward()
 
@@ -258,12 +258,12 @@ def _compiled_train_step(model, inputs, step_n):
     outputs = model.module.top_down.sample(predictions)
 
     return outputs, avg_feature_matching_loss, avg_global_varprior_losses, kl_div, total_norm, \
-           gradient_skip_counter_delta, skip
+        gradient_skip_counter_delta, skip
 
 
 def train_step(model, ema_model, optimizer, inputs, step_n):
     outputs, avg_feature_matching_loss, avg_global_varprior_losses, kl_div, global_norm, \
-    gradient_skip_counter_delta, skip = _compiled_train_step(model, inputs, step_n)
+        gradient_skip_counter_delta, skip = _compiled_train_step(model, inputs, step_n)
 
     if not skip:
         optimizer.step()
@@ -271,7 +271,7 @@ def train_step(model, ema_model, optimizer, inputs, step_n):
 
     optimizer.zero_grad()
     return outputs, avg_feature_matching_loss, avg_global_varprior_losses, kl_div, \
-           global_norm, gradient_skip_counter_delta
+        global_norm, gradient_skip_counter_delta
 
 
 def eval_step(model, inputs, step_n):
@@ -279,12 +279,12 @@ def eval_step(model, inputs, step_n):
         predictions, posterior_dist_list, prior_kl_dist_list = model(inputs)
 
         avg_feature_matching_loss, avg_global_varprior_losses, total_generator_loss, means, \
-        log_scales, kl_div = compute_loss(inputs,
-                                          predictions,
-                                          posterior_dist_list=posterior_dist_list,
-                                          prior_kl_dist_list=prior_kl_dist_list,
-                                          step_n=step_n,
-                                          global_batch_size=hparams.val.batch_size // hparams.run.num_gpus)
+            log_scales, kl_div = compute_loss(inputs,
+                                              predictions,
+                                              posterior_dist_list=posterior_dist_list,
+                                              prior_kl_dist_list=prior_kl_dist_list,
+                                              step_n=step_n,
+                                              global_batch_size=hparams.val.batch_size // hparams.run.num_gpus)
 
         outputs = model.module.top_down.sample(predictions)
 
@@ -298,14 +298,14 @@ def reconstruction_step(model, inputs, variates_masks=None, mode='recon'):
 
         if mode == 'recon':
             feature_matching_loss, global_varprior_losses, total_generator_loss, means, \
-            log_scales, kl_div = compute_loss(inputs,
-                                              predictions,
-                                              posterior_dist_list=posterior_dist_list,
-                                              prior_kl_dist_list=prior_kl_dist_list,
-                                              step_n=max(hparams.loss.vae_beta_anneal_steps,
-                                                         hparams.loss.gamma_max_steps) * 10.,
-                                              # any number bigger than schedule is fine
-                                              global_batch_size=hparams.synthesis.batch_size)
+                log_scales, kl_div = compute_loss(inputs,
+                                                  predictions,
+                                                  posterior_dist_list=posterior_dist_list,
+                                                  prior_kl_dist_list=prior_kl_dist_list,
+                                                  step_n=max(hparams.loss.vae_beta_anneal_steps,
+                                                             hparams.loss.gamma_max_steps) * 10.,
+                                                  # any number bigger than schedule is fine
+                                                  global_batch_size=hparams.synthesis.batch_size)
 
             if hparams.data.dataset_source == 'binarized_mnist':
                 # Convert from bpd to nats for comparison
@@ -341,7 +341,7 @@ def update_ema(vae, ema_vae, ema_rate):
 
 
 def train(model, ema_model, optimizer, schedule, train_dataset, val_dataset, checkpoint_start, tb_writer_train,
-          tb_writer_val, checkpoint_path, device, rank):
+          tb_writer_val, checkpoint_path, device, rank, step_id):
     ssim_metric = StructureSimilarityIndexMap(image_channels=hparams.data.channels)
     global_step = checkpoint_start
     gradient_skip_counter = 0.
@@ -349,7 +349,7 @@ def train(model, ema_model, optimizer, schedule, train_dataset, val_dataset, che
     model.train()
 
     # let all processes sync up before starting with a new epoch of training
-    total_train_epochs = int(np.ceil(hparams.train.total_train_steps / len(train_dataset)))
+    total_train_epochs = int(np.ceil(hparams.train.total_train_steps / len(train_dataset)) - global_step + 1)
     val_epoch = 0
     for epoch in range(0, total_train_epochs):
         train_dataset.sampler.set_epoch(epoch)
@@ -364,8 +364,8 @@ def train(model, ema_model, optimizer, schedule, train_dataset, val_dataset, che
             # torch.cuda.synchronize()
             start_time = time.time()
             train_outputs, train_feature_matching_loss, train_global_varprior_losses, train_kl_div, \
-            global_norm, gradient_skip_counter_delta = train_step(model, ema_model, optimizer, train_inputs,
-                                                                  global_step)
+                global_norm, gradient_skip_counter_delta = train_step(model, ema_model, optimizer, train_inputs,
+                                                                      global_step)
             # torch.cuda.synchronize()
             end_time = round((time.time() - start_time), 2)
             schedule.step()
@@ -424,9 +424,9 @@ def train(model, ema_model, optimizer, schedule, train_dataset, val_dataset, che
                     # Val inputs contains val_Data and filenames
                     val_inputs = val_inputs.to(device, non_blocking=True)
                     val_outputs, val_feature_matching_loss, \
-                    val_global_varprior_loss, val_kl_div, val_means, val_log_scales = eval_step(model,
-                                                                                                inputs=val_inputs,
-                                                                                                step_n=global_step)
+                        val_global_varprior_loss, val_kl_div, val_means, val_log_scales = eval_step(model,
+                                                                                                    inputs=val_inputs,
+                                                                                                    step_n=global_step)
 
                     val_ssim_per_batch = ssim_metric(val_inputs, val_outputs,
                                                      global_batch_size=hparams.val.batch_size // hparams.run.num_gpus)
@@ -474,12 +474,13 @@ def train(model, ema_model, optimizer, schedule, train_dataset, val_dataset, che
                     print(f'Checkpoint path is {checkpoint_path}.')
 
                     torch.save({
+                        'step_id': step_id,
                         'global_step': global_step,
                         'model_state_dict': model.module.state_dict(),
                         'ema_model_state_dict': ema_model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
                         'scheduler_state_dict': schedule.state_dict()
-                    }, checkpoint_path)
+                    }, checkpoint_path / f"{global_step}.pt")
 
                     # Tensorboard logging
                     print('Logging to Tensorboard..')
